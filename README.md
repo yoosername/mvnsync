@@ -1,4 +1,4 @@
-mvnsync
-=======
+groovy-stuff
+============
 
-example maven synchroniser in groovy
+Maven test synchronisation script written in groovy
