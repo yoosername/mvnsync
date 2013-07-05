@@ -37,6 +37,7 @@ import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.events.TransferEvent;
 import org.apache.maven.wagon.events.TransferListener;
 import org.apache.maven.wagon.observers.AbstractTransferListener;
+import org.apache.commons.io.FileUtils;
 import org.codehaus.plexus.DefaultPlexusContainer;
 import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.PlexusContainerException;
@@ -205,7 +206,7 @@ List<IndexCreator> indexers = new ArrayList<IndexCreator>()
 indexers.add( plexusContainer.lookup( IndexCreator.class, "min" ) )
 indexers.add( plexusContainer.lookup( IndexCreator.class, "jarContent" ) )
 indexers.add( plexusContainer.lookup( IndexCreator.class, "maven-plugin" ) )
-indexers.add( plexusContainer.lookup( IndexCreator.class, "maven-archetype" ) )
+//indexers.add( plexusContainer.lookup( IndexCreator.class, "maven-archetype" ) )
   
 // Create context for repository index
 IndexingContext mavenContext = indexer.createIndexingContext( 
@@ -282,10 +283,13 @@ if (opt.s){
 			println " - error: " + e.message
 		}
 	}
-	
+
 	try{
-		IndexReader ir = searcher.getIndexReader();
-		println "[sync] there are " + ir.maxDoc() + " artifacts in the index"
+		IndexReader ir = searcher.getIndexReader()
+		numRealArtifacts = countRealArtifacts(ir, mavenContext)
+		println "[sync] $numRealArtifacts artifacts in the index"
+		numLocalArtifacts = countLocalArtifacts(opt.l)
+		println "[sync] $numLocalArtifacts artifacts in local repository"
 		
 		// Loop through every artifact in index
 		for ( int i = 0; i < ir.maxDoc(); i++ ){
@@ -293,10 +297,10 @@ if (opt.s){
 			if ( !ir.isDeleted( i ) ){
 				// Get the indexed document to search for
 				Document doc = ir.document( i );
-				
+
 				// Pull out the artifact information
 				ArtifactInfo ai = IndexUtils.constructArtifactInfo( doc, mavenContext );
-							
+				
 				// Artifact info might be null, so check to be sure
 				if( ai != null ){
 					// Parse remote file path
@@ -340,6 +344,26 @@ if (opt.s){
 		println( "==============================================================" )
 		println( "Finished" )
 	}
+}
+
+// Count how many artifacts in index after filtering rubish
+def countRealArtifacts( ir, mavenContext ){
+	total = 0
+	for ( int i = 0; i < ir.maxDoc(); i++ ){
+		if ( !ir.isDeleted( i ) ){
+			ArtifactInfo ai = IndexUtils.constructArtifactInfo( ir.document( i ), mavenContext );
+			if( ai != null ){
+				total++
+			}
+		}
+	}
+	return total
+}
+
+// Count how many files we have in our local repo
+def countLocalArtifacts(base){
+	baseFile = new File(base)
+	return org.apache.commons.io.FileUtils.listFiles(baseFile, null, true).size()
 }
 
 // Build relative path from remote artifact
