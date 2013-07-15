@@ -316,7 +316,9 @@ if (opt.s){
 							altFile = new File(filterRepository, relPath)
 							if(altFile.exists()){
 								println "[filtered] skipping: " + path(ai)
-								return
+								// don't return or break, just goto next iteration of loop if
+								// filter artifact found.
+								continue
 							}
 						}
 						print "[download] " + path(ai)
