@@ -323,7 +323,7 @@ if (opt.s){
 						}
 						print "[download] " + path(ai)
 						try{
-							FileUtils.copyURLToFile(new URL(opt.r), localFile)
+							FileUtils.copyURLToFile(new URL(opt.r + relPath), localFile)
 							println " - done"
 						}catch ( e ){
 							println " - error: " + e.message
